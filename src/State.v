@@ -110,10 +110,39 @@ Section S.
         (NEQ : x2 <> x1)
         (SM : st [x2 <- n1][x1 <- n2] / x3 => m) :
     st [x1 <- n2][x2 <- n1] / x3 => m.
-  Proof. admit. Admitted.
+  Proof.
+    inversion SM.
+    - subst. apply update_neq.
+      + assumption.
+      + apply update_eq.
+    - subst. inversion H5.
+      + apply st_binds_hd.
+      + apply st_binds_tl.
+        * assumption.
+        * apply update_neq.
+          ** symmetry. assumption.
+          ** assumption.         
+  Qed.
 
   Lemma state_extensional_equivalence (st st' : state) (H: forall x z, st / x => z <-> st' / x => z) : st = st'.
-  Proof. admit. Admitted.
+  Proof. Abort.
+
+  Theorem state_extensional_equivalence_false : (exists a: A, True) -> exists (st st' : state), (forall x z, st / x => z <-> st' / x => z) /\ st <> st'.
+  Proof.
+    intros.
+    destruct H.
+    exists [(Id 0, x); (Id 0, x)].
+    exists [(Id 0, x)].
+    split.
+    - split.
+      + intros. inversion H0.
+        * apply st_binds_hd.
+        * subst. assumption.
+      + intros. inversion H0.
+        * apply st_binds_hd.
+        * subst. apply st_binds_tl. assumption. assumption.
+    - discriminate. 
+  Qed.
 
   Definition state_equivalence (st st' : state) := forall x a, st / x => a <-> st' / x => a.
 
