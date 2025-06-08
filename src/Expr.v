@@ -649,7 +649,20 @@ Module SmallStep.
   Qed.
 
   Lemma ss_subst s C e e' (HR: s |- e ~~> e') : s |- (C <~ e) ~~> (C <~ e').
-  Proof. admit. Admitted.
+  Proof.
+    induction C; subst; simpl.
+    - assumption.
+    - induction IHC; subst; simpl.
+      + apply reach_base.
+      + assert (Hss: (s) |- (Bop b e1 e0) --> (Bop b e'0 e0)).
+        apply ss_Left. assumption.
+        apply (reach_step s (Bop b e1 e0) (Bop b e'0 e0) (Bop b e'' e0) Hss IHIHC).
+    - induction IHC.
+      + apply reach_base.
+      + assert (Hss: (s) |- (Bop b e0 e1) --> (Bop b e0 e'0)).
+        apply ss_Right. assumption.
+        apply (reach_step s (Bop b e0 e1) (Bop b e0 e'0) (Bop b e0 e'') Hss IHIHC).
+  Qed.
    
   Lemma ss_subst_binop s e1 e2 e1' e2' op (HR1: s |- e1 ~~> e1') (HR2: s |- e2 ~~> e2') :
     s |- (Bop op e1 e2) ~~> (Bop op e1' e2').
@@ -732,45 +745,7 @@ Module SmallStep.
   Lemma ss_eval_equiv (e : expr)
                       (s : state Z)
                       (z : Z) : [| e |] s => z <-> (s |- e -->> (Nat z)).
-  Proof.
-    split.
-    - intros.
-      induction H.
-      + apply se_Stop.
-      + apply se_Step with (e' := Nat z).
-        * apply ss_Var. assumption.
-        * apply se_Stop.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-      + apply ss_eval_binop with (za := za) (zb := zb); eauto.
-    - intros.
-      remember (Nat z) as e'.
-      induction H; subst.
-      + replace (Nat z0) with (Nat z). apply bs_Nat.
-      + assert (Nat z = Nat z). reflexivity.
-        apply IHss_eval in H0.
-        clear IHss_eval.
-        induction HStep.
-        * inversion H0. subst. apply bs_Var. assumption.
-        * inversion H0; subst. 
-  admit.
-  Admitted.
+  Proof. admit. Admitted.
   
 End SmallStep.
 
@@ -877,18 +852,28 @@ Module Renaming.
     destruct r as [f Hbij].
     destruct Hbij as [g Hfg].
     assert (Bijective g).
-    exists f. split.
-    - intros. apply (proj2 Hfg).
-    - intros. apply (proj1 Hfg).
+    - exists f. split.
+      * intros. apply (proj2 Hfg).
+      * intros. apply (proj1 Hfg).
     - exists (exist _ g H).
-    unfold renamings_inv, rename_id.
-    intros.
-    destruct Hfg as [Hgf Hfg'].
-    apply Hgf.
+      unfold renamings_inv, rename_id.
+      intros.
+      apply Hfg.
   Qed.
 
   Lemma renaming_inv2 (r : renaming) : exists (r' : renaming), renamings_inv r r'.
-  Proof. admit. Admitted.
+  Proof.
+    destruct r as [f Hbij].
+    destruct Hbij as [g Hfg].
+    assert (Bijective g).
+    - exists f. split.
+      * intros. apply (proj2 Hfg).
+      * intros. apply (proj1 Hfg).
+    - exists (exist Bijective g H).
+      unfold renamings_inv, rename_id.
+      intros.
+      apply Hfg.
+  Qed.
 
   Fixpoint rename_expr (r : renaming) (e : expr) : expr :=
     match e with
@@ -901,7 +886,17 @@ Module Renaming.
     (r r' : renaming)
     (Hinv : renamings_inv r r')
     (e    : expr) : rename_expr r (rename_expr r' e) = e.
-  Proof. admit. Admitted.
+  Proof.
+    induction e.
+    - simpl. reflexivity.
+    - simpl. 
+      f_equal.
+      apply Hinv.
+    - simpl.
+      f_equal.
+      + apply IHe1.
+      + apply IHe2.
+  Qed.
   
   Fixpoint rename_state (r : renaming) (st : state Z) : state Z :=
     match st with
@@ -914,10 +909,31 @@ Module Renaming.
     (r r' : renaming)
     (Hinv : renamings_inv r r')
     (st   : state Z) : rename_state r (rename_state r' st) = st.
-  Proof. admit. Admitted.
+  Proof.
+    induction st.
+    - simpl. reflexivity.
+    - simpl.
+      destruct r as [f Hbf]. 
+      destruct r' as [g Hbg].
+      destruct a as [id v].
+      simpl.
+      f_equal.
+      + unfold renamings_inv, rename_id in Hinv.
+        f_equal.
+        apply Hinv.
+      + apply IHst.
+  Qed.
       
   Lemma bijective_injective (f : id -> id) (BH : Bijective f) : Injective f.
-  Proof. admit. Admitted.
+  Proof.
+    unfold Bijective in BH.
+    unfold Injective.
+    destruct BH as [g [Hfg Hgf]].
+    intros x y H.
+    apply (f_equal g) in H.
+    rewrite Hfg, Hfg in H.
+    assumption.
+  Qed.
   
   Lemma eval_renaming_invariance (e : expr) (st : state Z) (z : Z) (r: renaming) :
     [| e |] st => z <-> [| rename_expr r e |] (rename_state r st) => z.
